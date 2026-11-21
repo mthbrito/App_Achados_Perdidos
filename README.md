@@ -36,4 +36,67 @@ App_Achados_Perdidos/
             │   ├── mapper/
             │   │   └── ItemMapper.kt          ← DTO ⇄ modelo de domínio
             │   └── repository/
-            │       └──
+            │       └── ItemRepository.kt      ← único ponto que chama a API
+            │
+            ├── domain/
+            │   └── model/
+            │       ├── Item.kt
+            │       ├── TipoItem.kt            ← PERDIDO, ENCONTRADO
+            │       └── StatusItem.kt          ← ATIVO, DEVOLVIDO
+            │
+            ├── ui/
+            │   ├── navigation/
+            │   │   └── NavGraph.kt            ← rotas e telas
+            │   ├── theme/                     ← Color, Theme, Type (gerado)
+            │   ├── components/
+            │   │   ├── ItemCard.kt            ← card da lista (Coil)
+            │   │   ├── MiniMapa.kt            ← osmdroid
+            │   │   └── ImagemItem.kt          ← AsyncImage com placeholder/erro
+            │   ├── home/
+            │   │   ├── HomeScreen.kt
+            │   │   └── HomeViewModel.kt
+            │   ├── detalhes/
+            │   │   ├── DetalhesScreen.kt
+            │   │   └── DetalhesViewModel.kt
+            │   └── formulario/
+            │       ├── FormularioScreen.kt    ← criar e editar
+            │       └── FormularioViewModel.kt
+            │
+            └── util/
+                ├── Resultado.kt               ← Sucesso / Erro / Carregando
+                └── ArquivoUtil.kt             ← Uri → MultipartBody.Part
+```
+
+## Responsabilidade de cada camada
+
+| Pasta | Função |
+|---|---|
+| **data/remote** | Retrofit: interface com GET, POST, PUT, PATCH e DELETE |
+| **data/dto** | Objetos que espelham o JSON da API (mesmos campos do `ItemRequest`/`ItemResponse`) |
+| **data/mapper** | Converte DTO em modelo do app, no mesmo padrão do `ItemMapper` da API |
+| **data/repository** | Chama o Retrofit e trata erros; é o que o ViewModel usa |
+| **domain/model** | Modelos usados pelas telas, sem dependência de rede |
+| **ui/** | Telas (Compose) e ViewModels, uma subpasta por tela |
+| **ui/components** | Peças reutilizáveis (card, mapa, imagem com Coil) |
+| **util** | Funções de apoio |
+
+Fluxo: **Tela → ViewModel → Repository → Retrofit → API**.
+A tela nunca fala direto com o Retrofit.
+
+## Onde entra cada tecnologia
+
+| Tecnologia | Onde |
+|---|---|
+| **Retrofit** | `data/remote` |
+| **Coil** | `ui/components/ImagemItem.kt` e `ItemCard.kt` |
+| **osmdroid** | `ui/components/MiniMapa.kt` |
+| **ViewModel + StateFlow** | `ui/*/…ViewModel.kt` |
+| **Navigation Compose** | `ui/navigation/NavGraph.kt` |
+
+## Ordem sugerida de criação
+
+1. `domain/model` e `data/dto`
+2. `data/remote` (Retrofit) e `data/repository`
+3. `ui/home` (lista com Coil)
+4. `ui/detalhes` e `ui/formulario`
+5. `ui/components/MiniMapa` (osmdroid)
