@@ -12,13 +12,17 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 data class HomeUiState(
     val carregando: Boolean = true,
+    val erro: Boolean = false,
     val aba: TipoItem = TipoItem.PERDIDO,
     val categoria: Categoria? = null, // null = "Todas"
     val itens: List<Item> = emptyList()
 )
+
+private enum class StatusCarga { CARREGANDO, OK, ERRO }
 
 class HomeViewModel : ViewModel() {
 
@@ -27,13 +31,16 @@ class HomeViewModel : ViewModel() {
 
     private val _aba = MutableStateFlow(TipoItem.PERDIDO)
     private val _categoria = MutableStateFlow<Categoria?>(null)
+    private val _status = MutableStateFlow(StatusCarga.CARREGANDO)
 
-    // combine(): sempre que a lista, a busca, a aba ou o filtro mudam, recalcula a lista exibida.
+    // combine(): sempre que a lista, a busca, a aba, o filtro ou o status da carga mudam,
+    // recalcula o estado exibido.
     val uiState: StateFlow<HomeUiState> = combine(
-        ItemRepository.itens, _busca, _aba, _categoria
-    ) { itens, busca, aba, categoria ->
+        ItemRepository.itens, _busca, _aba, _categoria, _status
+    ) { itens, busca, aba, categoria, status ->
         HomeUiState(
-            carregando = false,
+            carregando = status == StatusCarga.CARREGANDO,
+            erro = status == StatusCarga.ERRO,
             aba = aba,
             categoria = categoria,
             itens = itens.filter { item ->
@@ -45,6 +52,23 @@ class HomeViewModel : ViewModel() {
             }
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
+
+    init {
+        carregar()
+    }
+
+    // GET /itens: também serve para o botão "Tentar de novo".
+    fun carregar() {
+        viewModelScope.launch {
+            _status.value = StatusCarga.CARREGANDO
+            _status.value = try {
+                ItemRepository.carregar()
+                StatusCarga.OK
+            } catch (e: Exception) {
+                StatusCarga.ERRO
+            }
+        }
+    }
 
     fun onBuscaChange(texto: String) { _busca.value = texto }
     fun onAbaChange(aba: TipoItem) { _aba.value = aba }

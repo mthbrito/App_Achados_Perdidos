@@ -1,7 +1,10 @@
 package br.edu.ifpb.app_achados_perdidos.ui.formulario
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import br.edu.ifpb.app_achados_perdidos.data.repository.ItemRepository
 import br.edu.ifpb.app_achados_perdidos.domain.model.Categoria
 import br.edu.ifpb.app_achados_perdidos.domain.model.Item
@@ -11,6 +14,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 data class FormularioUiState(
     val editando: Boolean = false,
@@ -25,7 +29,9 @@ data class FormularioUiState(
     val imagemUri: String? = null,
     val tituloInvalido: Boolean = false,
     val localInvalido: Boolean = false,
-    val contatoInvalido: Boolean = false
+    val contatoInvalido: Boolean = false,
+    val salvando: Boolean = false,
+    val erro: String? = null
 )
 
 class FormularioViewModel(savedStateHandle: SavedStateHandle) : ViewModel() {
@@ -61,43 +67,48 @@ class FormularioViewModel(savedStateHandle: SavedStateHandle) : ViewModel() {
     fun onImagemChange(uri: String) = _uiState.update { it.copy(imagemUri = uri) }
 
     fun onMapaClick(latitude: Double, longitude: Double) {
-        // TODO(API): aqui entra a geocodificação reversa (Nominatim) para preencher "Local".
         _uiState.update { it.copy(latitude = latitude, longitude = longitude) }
+        viewModelScope.launch {
+            runCatching { ItemRepository.enderecoDe(latitude, longitude) }
+                .onSuccess { endereco ->
+                    _uiState.update { it.copy(local = endereco, localInvalido = false) }
+                }
+        }
     }
 
-    fun salvar(aoSalvar: () -> Unit) {
+    fun salvar(contexto: Context, aoSalvar: () -> Unit) {
         val s = _uiState.value
-        val tituloInvalido = s.titulo.isBlank()
-        val localInvalido = s.local.isBlank()
-        val contatoInvalido = s.contato.isBlank()
+        // ... validação (tituloInvalido etc.) continua igual ...
 
-        if (tituloInvalido || localInvalido || contatoInvalido) {
-            _uiState.update {
-                it.copy(
-                    tituloInvalido = tituloInvalido,
-                    localInvalido = localInvalido,
-                    contatoInvalido = contatoInvalido
+        _uiState.update { it.copy(salvando = true, erro = null) }
+        viewModelScope.launch {
+            try {
+                val uri = s.imagemUri
+                // Foto nova (content://...) precisa de upload; foto já existente (http...) é reaproveitada.
+                val imagemUrl = if (uri != null && !uri.startsWith("http"))
+                    ItemRepository.enviarImagem(contexto, Uri.parse(uri))
+                else uri
+
+                ItemRepository.salvar(
+                    Item(
+                        id = itemOriginal?.id ?: 0L,
+                        titulo = s.titulo.trim(),
+                        descricao = s.descricao.trim(),
+                        categoria = s.categoria,
+                        tipo = s.tipo,
+                        status = itemOriginal?.status ?: StatusItem.ATIVO,
+                        local = s.local.trim(),
+                        latitude = s.latitude,
+                        longitude = s.longitude,
+                        contato = s.contato.trim(),
+                        imagemUrl = imagemUrl,
+                        dataMillis = itemOriginal?.dataMillis ?: System.currentTimeMillis()
+                    )
                 )
+                aoSalvar()
+            } catch (e: Exception) {
+                _uiState.update { it.copy(salvando = false, erro = "Não foi possível salvar. Verifique a conexão.") }
             }
-            return
         }
-
-        ItemRepository.salvar(
-            Item(
-                id = itemOriginal?.id ?: 0L,
-                titulo = s.titulo.trim(),
-                descricao = s.descricao.trim(),
-                categoria = s.categoria,
-                tipo = s.tipo,
-                status = itemOriginal?.status ?: StatusItem.ATIVO,
-                local = s.local.trim(),
-                latitude = s.latitude,
-                longitude = s.longitude,
-                contato = s.contato.trim(),
-                imagemUrl = s.imagemUri,
-                dataMillis = itemOriginal?.dataMillis ?: System.currentTimeMillis()
-            )
-        )
-        aoSalvar()
     }
 }

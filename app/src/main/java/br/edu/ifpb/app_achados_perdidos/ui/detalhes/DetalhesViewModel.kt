@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 class DetalhesViewModel(savedStateHandle: SavedStateHandle) : ViewModel() {
 
@@ -19,10 +20,13 @@ class DetalhesViewModel(savedStateHandle: SavedStateHandle) : ViewModel() {
         .map { lista -> lista.firstOrNull { it.id == itemId } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ItemRepository.buscarPorId(itemId))
 
-    fun marcarComoDevolvido() = ItemRepository.marcarComoDevolvido(itemId)
+    fun marcarComoDevolvido() {
+        viewModelScope.launch { runCatching { ItemRepository.marcarComoDevolvido(itemId) } }
+    }
 
     fun excluir(aoConcluir: () -> Unit) {
-        ItemRepository.excluir(itemId)
-        aoConcluir()
+        viewModelScope.launch {
+            runCatching { ItemRepository.excluir(itemId) }.onSuccess { aoConcluir() }
+        }
     }
 }
