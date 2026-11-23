@@ -1,3 +1,53 @@
 <resources>
     <string name="app_name">App_Achados_Perdidos</string>
+
+    <!-- Geral -->
+    <string name="cd_voltar">Voltar</string>
+    <string name="cd_imagem_item">Foto do item</string>
+    <string name="cancelar">Cancelar</string>
+    <string name="mapa_atribuicao">© OpenStreetMap</string>
+    <string name="mapa_dica">Toque no mapa para marcar o ponto</string>
+
+    <!-- Categorias e status -->
+    <string name="categoria_todas">Todas</string>
+    <string name="categoria_documentos">Documentos</string>
+    <string name="categoria_chaves">Chaves</string>
+    <string name="categoria_eletronicos">Eletrônicos</string>
+    <string name="categoria_outros">Outros</string>
+    <string name="status_perdido">Perdido</string>
+    <string name="status_encontrado">Encontrado</string>
+    <string name="status_devolvido">Devolvido</string>
+
+    <!-- Home -->
+    <string name="home_titulo">Achados e Perdidos</string>
+    <string name="home_busca">Buscar por título ou descrição</string>
+    <string name="aba_perdidos">Perdidos</string>
+    <string name="aba_encontrados">Encontrados</string>
+    <string name="home_vazio">Nenhum item encontrado</string>
+    <string name="home_adicionar">Adicionar item</string>
+
+    <!-- Detalhes -->
+    <string name="detalhes_categoria_data">%1$s · %2$s</string>
+    <string name="detalhes_local">Local: %1$s</string>
+    <string name="detalhes_contato">Entrar em contato</string>
+    <string name="detalhes_devolvido">Marcar como devolvido</string>
+    <string name="detalhes_editar">Editar</string>
+    <string name="detalhes_excluir">Excluir</string>
+    <string name="detalhes_nao_encontrado">Item não encontrado</string>
+    <string name="excluir_titulo">Excluir item?</string>
+    <string name="excluir_mensagem">Essa ação não poderá ser desfeita.</string>
+
+    <!-- Formulário -->
+    <string name="form_novo">Novo item</string>
+    <string name="form_editar">Editar item</string>
+    <string name="form_foto">Adicionar foto</string>
+    <string name="form_perdi">Perdi</string>
+    <string name="form_encontrei">Encontrei</string>
+    <string name="form_titulo">Título</string>
+    <string name="form_descricao">Descrição</string>
+    <string name="form_categoria">Categoria</string>
+    <string name="form_local">Local</string>
+    <string name="form_contato">Contato</string>
+    <string name="form_salvar">Salvar</string>
+    <string name="form_obrigatorio">Campo obrigatório</string>
 </resources>
